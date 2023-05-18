@@ -1,16 +1,19 @@
-# This is a sample Python script.
+from flask import Flask
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi bjh, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+app = Flask(__name__)#указываем имя нашего приложения
+#__name__ указывает имя текущего файла, но можно указать и __main__
+#будет там искать шаблоны и тд
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('Hello PyCharm')
+@app.route("/")# с помощью декоратора указываем url
+@app.route("/index")#если по разным url должен выполняться один обработчик, пишем их подряд
+def index():#по которому будет отработывать обрабочик
+    return "index"
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+@app.route("/about")
+def about():
+    return "<h1>О сайте</h1>"
+
+if __name__ == '__main__':# это прописывается для запуска именно на локальном устройстве
+    app.run(debug=True)# запускаем локальный веб сервер. debug=True - в браузере будем видеть все ошибки
+    #по оканчании разработки надо поставить False
