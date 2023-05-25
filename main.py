@@ -1,20 +1,62 @@
-from flask import Flask, render_template, url_for, request, flash, session, redirect, abort
+from flask import Flask, render_template, url_for, request, flash, session, redirect, abort, g
+import sqlite3
+import os
+
+# конфигурации
+DATABASE ='/tmp/flsite.db'
+DEBUG = True
+SECRET_KEY = '794urfidsjfkdhfi84eriurfi4urgfbh'
 
 app = Flask(__name__)  # указываем имя нашего приложения
 # __name__ указывает имя текущего файла, но можно указать и __main__
 # будет там искать шаблоны и тд
-app.config['SECRET_KEY'] = '794urfidsjfkdhfi84eriurfi4urgfbh'
+app.config.from_object(__name__)
+app.config.update(dict(DATABASE=os.path.join(app.root_path, 'flsite.db')))
+
+# подключение к бд
+def connect_db():
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+# будет создавать начальную БД с набором необходимых таблиц
+def create_db():
+    """Вспомогательная функция для создания таблиц БД"""
+    db = connect_db()
+    with app.open_resource('sq_db.sql', mode='r') as f: # в sq_db.sql написаны скрипты для создания таблиц
+        db.cursor().executescript(f.read())
+    db.commit()
+    db.close()
+
+@app.route("/")
+def index():
+    db = get_db()
+    return render_template('index.html', menu = [])
+
+def get_db():
+    '''Соединение с БД, если оно еще не установлено'''
+    if not hasattr(g, 'link_db'):
+        g.link_db = connect_db()
+    return g.link_db
+
+@app.teardown_appcontext # декоратор срабатывает, когда происходит уничтожение контекста приложения
+def close_db(error):
+    '''Закрываем соединение с БД, если оно было установлено'''
+    if hasattr(g, 'link_db'):
+        g.link_db.close()
+
 
 menu = [{"name": "Установка", "url": "install-flask"},
         {"name": "Первое приложение", "url": "first-app"},
         {"name": "Обратная связь", "url": "contact"}]
 
 
-@app.route("/")  # с помощью декоратора указываем url
-# @app.route("/index") #если по разным url должен выполняться один обработчик, пишем их подряд
-def index():  # по которому будет отработывать обрабочик
-    print(url_for('index'))  # получим url обработчика "/"
-    return render_template('index.html', title="Про Flask", menu=menu)
+# @app.route("/")  # с помощью декоратора указываем url
+# # @app.route("/index") #если по разным url должен выполняться один обработчик, пишем их подряд
+# def index():  # по которому будет отработывать обрабочик
+#     print(url_for('index'))  # получим url обработчика "/"
+#     return render_template('index.html', title="Про Flask", menu=menu)
 
 
 @app.route("/about")
